@@ -4,118 +4,31 @@
 #include <fstream>
 #include <vector>
 #include "geometry.h"
+#include "structs.h"
 
 using namespace std;
 
-struct Material {
-    Vec3f colour;
-
-    Material(const Vec3f col){
-        colour = col;
-    }
-
-    Material() {
-        colour = Vec3f(0.9, 0.9, 0.6);
-    }
-};
-
-struct Light {
-    Vec3f position;
-    Vec3f colour;
-    float intensity;
-
-    Light(const Vec3f& pos, float isty) {
-        position = pos;
-        intensity = isty;
-    }
-
-    Light(const Vec3f& pos, const Vec3f& col, float isty) {
-        position = pos;
-        colour = col;
-        intensity = isty;
-    }
-};
-
-struct Ray { //Ray represented by equation of line: origin + direction*t
-    Vec3f origin;
-    Vec3f direction;
-
-    Ray(Vec3f& o, Vec3f& d) {
-        origin = o;
-        direction = d;
-    }
-
-    Ray(const Vec3f& o, const Vec3f& d) {
-        origin = o;
-        direction = d;
-    }
-};
-
-struct Sphere {
-    Vec3f center;
-    float radius;
-    Material material;
-
-    Sphere(const Vec3f& c, float r) {
-        center = c;
-        radius = r;
-    }
-
-    Sphere(const Vec3f& c, float r, const Material& mat) {
-        center = c;
-        radius = r;
-        material = mat;
-    }
-
-    Sphere(Vec3f& c, float r) {
-        center = c;
-        radius = r;
-    }
-
-    bool intersect(Ray& r, Vec3f& intersection_point){
-        //Represent ray-sphere combination as implicit function and apply quadratic formula to find points of intersection (roots)
-        //(ray-center).(ray-center)-radius^2=0
-        //(o + dt - c).(o + dt - c) - r^2 = 0
-        //((o-c) + dt).((o-c) + dt) - r^2 = 0
-        //(o-c).(o-c) + 2t((o-c).d) + t^2*(d.d) - r^2 = 0 - quadratic eqn in t
-        // t = (-b +- sqrt(b^2 - 4ac))/2a
-        // a = d.d
-        // b = (o-c).d
-        // c = (o-c).(o-c) - r^2
-
-        float a = dot(r.direction, r.direction);
-        float b = 2*dot(r.origin - center, r.direction);
-        float c = dot(r.origin - center, r.origin - center) - radius*radius;
-
-        float t1 = (-b + sqrtf(b*b - 4*a*c))/(2*a);
-        float t2 = (-b - sqrtf(b*b - 4*a*c))/(2*a);
-
-        if(t1 > 0){ //point on line(time) = origin + direction*time
-            intersection_point = r.origin + r.direction*t1;
-        } else if(t2 > 0){
-            intersection_point = r.origin + r.direction*t2;
-        }
-        return (t1 > 0 || t2 > 0);
-    }
-};
-
 Vec3f cast_ray(Ray& r, vector<Sphere> spheres, vector<Light> lights){
-    Vec3f intersection_point;
+    Intersection intersection_point;
     for(auto s : spheres){
         if(s.intersect(r, intersection_point)){
             float total_coeff = 0;
             //float ambient_coefficient = 0.2;
             float diffuse_coefficient = 0;
-            Vec3f col(s.material.colour.x, s.material.colour.y,s.material.colour.z);
+            //Vec3f col(s.material.colour.x, s.material.colour.y,s.material.colour.z);
 
             for(auto l : lights){
                 //Apply lambertian/cosine shading
-                float shade = dot((l.position-intersection_point).normalize(),intersection_point.normalize());
+                //float shade = dot(
+                    //(l.position-intersection_point).normalize(),
+                  //  intersection_point.normalize());
+
+                float shade = dot(intersection_point.normal,(l.position-s.center));
                 //diffuse_coefficient += ;
 
-                if(shade < 0){
-                    shade = 0;
-                }
+               // if(shade < 0){
+                 //   shade = 0.0;
+               // }
 
                 total_coeff += l.intensity*shade;
             }
