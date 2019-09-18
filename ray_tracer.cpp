@@ -9,31 +9,27 @@
 using namespace std;
 
 Vec3f cast_ray(Ray& r, vector<Sphere> spheres, vector<Light> lights){
-    Intersection intersection_point;
+    
     for(auto s : spheres){
+        Intersection intersection_point;
         if(s.intersect(r, intersection_point)){
-            float total_coeff = 0;
-            //float ambient_coefficient = 0.2;
-            float diffuse_coefficient = 0;
-            //Vec3f col(s.material.colour.x, s.material.colour.y,s.material.colour.z);
-
+            float total = 1;
             for(auto l : lights){
                 //Apply lambertian/cosine shading
-                //float shade = dot(
-                    //(l.position-intersection_point).normalize(),
-                  //  intersection_point.normalize());
+                float shade = dot(
+                    intersection_point.normal.normalize(),
+                (l.position-intersection_point.ray.point_at_time(intersection_point.time)).normalize());
 
-                float shade = dot(intersection_point.normal,(l.position-s.center));
-                //diffuse_coefficient += ;
-
-               // if(shade < 0){
-                 //   shade = 0.0;
+                if(shade < 0){
+                    shade = 0.0;
+                } //else {
+                   // shade = 0.8;
                // }
 
-                total_coeff += l.intensity*shade;
+                total += (l.intensity*shade);
             }
 
-            return s.material.colour * total_coeff;
+            return s.material.colour * total;
         }
     } 
     
@@ -81,8 +77,8 @@ void write_image_to_file(vector<Vec3f>& framebuffer, const int height, const int
 }
 
 int main() {
-    const int width    = 1024;
-    const int height   = 768;
+    const int width    = 1920;
+    const int height   = 1080;
     vector<Vec3f> framebuffer(width*height); //List of Vec3
     vector<Sphere> spheres;
 
@@ -90,12 +86,12 @@ int main() {
     Material mat;
 
     vector<Light> lights;
-    lights.push_back(Light(Vec3f(-20,20,20), 1.5));
+    lights.push_back(Light(Vec3f(-20,20,10), 4));
 
     Sphere s(Vec3f(0,10,-30), 1, red);
     Sphere p(Vec3f(5,0,-30), 1, mat);
     Sphere q(Vec3f(-5,0,-30), 6, red);
-    Sphere r(Vec3f(-10,10,-30), 4, mat);
+    Sphere r(Vec3f(-10,10,-30), 4, red);
 
     spheres.push_back(s);
     spheres.push_back(p);
