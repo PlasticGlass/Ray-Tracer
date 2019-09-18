@@ -7,6 +7,18 @@
 
 using namespace std;
 
+struct Material {
+    Vec3f colour;
+
+    Material(const Vec3f col){
+        colour = col;
+    }
+
+    Material() {
+        colour = Vec3f(0.9, 0.9, 0.6);
+    }
+};
+
 struct Ray { //Ray represented by equation of line: origin + direction*t
     Vec3f origin;
     Vec3f direction;
@@ -25,10 +37,17 @@ struct Ray { //Ray represented by equation of line: origin + direction*t
 struct Sphere {
     Vec3f center;
     float radius;
+    Material material;
 
     Sphere(const Vec3f& c, float r) {
         center = c;
         radius = r;
+    }
+
+    Sphere(const Vec3f& c, float r, const Material& mat) {
+        center = c;
+        radius = r;
+        material = mat;
     }
 
     Sphere(Vec3f& c, float r) {
@@ -61,7 +80,7 @@ struct Sphere {
 Vec3f cast_ray(Ray& r, vector<Sphere> spheres){
     for(auto s : spheres){
         if(s.intersect(r)){
-            return Vec3f(0.9, 0.9, 0.6);
+            return s.material.colour;
         }
     } 
     
@@ -109,15 +128,19 @@ void write_image_to_file(vector<Vec3f>& framebuffer, const int height, const int
 }
 
 int main() {
-    const int width    = 400;
-    const int height   = 400;
+    const int width    = 1024;
+    const int height   = 768;
     vector<Vec3f> framebuffer(width*height); //List of Vec3
     vector<Sphere> spheres;
 
-    Sphere s(Vec3f(0,0,-30), 1);
-    Sphere p(Vec3f(5,0,-30), 1);
-    Sphere q(Vec3f(-5,0,-30), 1);
-    Sphere r(Vec3f(-10,0,-30), 1);
+    Material red(Vec3f(0.3, 0.1, 0.1));
+    Material mat;
+
+    Sphere s(Vec3f(0,10,-30), 1, red);
+    Sphere p(Vec3f(5,0,-30), 1, mat);
+    Sphere q(Vec3f(-5,0,-30), 6, red);
+    Sphere r(Vec3f(-10,10,-30), 4, mat);
+
     spheres.push_back(s);
     spheres.push_back(p);
     spheres.push_back(q);
