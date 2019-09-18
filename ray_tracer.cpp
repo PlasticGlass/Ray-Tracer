@@ -5,6 +5,8 @@
 #include <vector>
 #include "geometry.h"
 
+using namespace std;
+
 struct Ray { //Ray represented by equation of line: origin + direction*t
     Vec3f origin;
     Vec3f direction;
@@ -56,21 +58,23 @@ struct Sphere {
     }
 };
 
-Vec3f cast_ray(Ray& r, Sphere& s){
-    if(s.intersect(r)){
-        return Vec3f(0.9, 0.9, 0.6);
-    } else {
-        return Vec3f(0.298, 0.7058, 0.9843);
-    }
+Vec3f cast_ray(Ray& r, vector<Sphere> spheres){
+    for(auto s : spheres){
+        if(s.intersect(r)){
+            return Vec3f(0.9, 0.9, 0.6);
+        }
+    } 
+    
+    return Vec3f(0.298, 0.7058, 0.9843);
 }
 
-void render(std::vector<Vec3f>& framebuffer, const int height, const int width, Sphere& sphere) {
+void render(vector<Vec3f>& framebuffer, const int height, const int width, vector<Sphere> spheres) {
     float widthf = (float)width;
     float heightf = (float)height;
     
     for (int j = 0; j<height; j++) {
         for (int i = 0; i<width; i++) {
-            int fov = M_PI/2;
+            int fov = M_PI/3;
             float tan_val = tan(fov/2.0);
             float ar = widthf/heightf;
 
@@ -85,14 +89,16 @@ void render(std::vector<Vec3f>& framebuffer, const int height, const int width, 
             float y = -(2*(j+0.5)/heightf - 1) * tan_val;
             float z = -1; //z coordinate is -1, so "screen" (stuff thats visible) is 1 unit away from camera
 
-            Ray r(Vec3f(0,0,0), Vec3f(x, y, z)); 
-            framebuffer[i+j*width] = cast_ray(r, sphere);
+            Ray r(Vec3f(0,0,0), Vec3f(x, y, z));
+
+            framebuffer[i+j*width] = cast_ray(r, spheres);
+            
         }
     }
 }
 
-void write_image_to_file(std::vector<Vec3f>& framebuffer, const int height, const int width) {
-    std::ofstream ofs ("image.ppm"); // save the framebuffer to file
+void write_image_to_file(vector<Vec3f>& framebuffer, const int height, const int width) {
+    ofstream ofs ("image.ppm"); // save the framebuffer to file
     ofs << "P6\n" << width << " " << height << "\n255\n";
     for (int i = 0; i < height*width; ++i) {
         for (int j = 0; j<3; j++) { //Write out 3 components (rgb) of Vec3 (pixel) at index i in framebuffer
@@ -103,11 +109,23 @@ void write_image_to_file(std::vector<Vec3f>& framebuffer, const int height, cons
 }
 
 int main() {
-    const int width    = 1920;
-    const int height   = 1080;
-    std::vector<Vec3f> framebuffer(width*height); //List of Vec3
-    Sphere s(Vec3f(-3,0,-16), 2);
-    render(framebuffer, height, width, s);
+    const int width    = 400;
+    const int height   = 400;
+    vector<Vec3f> framebuffer(width*height); //List of Vec3
+    vector<Sphere> spheres;
+
+    Sphere s(Vec3f(0,0,-30), 1);
+    Sphere p(Vec3f(5,0,-30), 1);
+    Sphere q(Vec3f(-5,0,-30), 1);
+    Sphere r(Vec3f(-10,0,-30), 1);
+    spheres.push_back(s);
+    spheres.push_back(p);
+    spheres.push_back(q);
+    spheres.push_back(r);
+
+    render(framebuffer, height, width, spheres);
+    
+    
     write_image_to_file(framebuffer, height, width);
 
     return 0;
