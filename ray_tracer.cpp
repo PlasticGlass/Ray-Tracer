@@ -19,6 +19,23 @@ struct Material {
     }
 };
 
+struct Light {
+    Vec3f position;
+    Vec3f colour;
+    float intensity;
+
+    Light(const Vec3f& pos, float isty) {
+        position = pos;
+        intensity = isty;
+    }
+
+    Light(const Vec3f& pos, const Vec3f& col, float isty) {
+        position = pos;
+        colour = col;
+        intensity = isty;
+    }
+};
+
 struct Ray { //Ray represented by equation of line: origin + direction*t
     Vec3f origin;
     Vec3f direction;
@@ -55,7 +72,7 @@ struct Sphere {
         radius = r;
     }
 
-    bool intersect(Ray& r){
+    bool intersect(Ray& r, Vec3f& intersection_point){
         //Represent ray-sphere combination as implicit function and apply quadratic formula to find points of intersection (roots)
         //(ray-center).(ray-center)-radius^2=0
         //(o + dt - c).(o + dt - c) - r^2 = 0
@@ -73,21 +90,44 @@ struct Sphere {
         float t1 = (-b + sqrtf(b*b - 4*a*c))/(2*a);
         float t2 = (-b - sqrtf(b*b - 4*a*c))/(2*a);
 
+        if(t1 > 0){ //point on line(time) = origin + direction*time
+            intersection_point = r.origin + r.direction*t1;
+        } else if(t2 > 0){
+            intersection_point = r.origin + r.direction*t2;
+        }
         return (t1 > 0 || t2 > 0);
     }
 };
 
-Vec3f cast_ray(Ray& r, vector<Sphere> spheres){
+Vec3f cast_ray(Ray& r, vector<Sphere> spheres, vector<Light> lights){
+    Vec3f intersection_point;
     for(auto s : spheres){
-        if(s.intersect(r)){
-            return s.material.colour;
+        if(s.intersect(r, intersection_point)){
+            float total_coeff = 0;
+            //float ambient_coefficient = 0.2;
+            float diffuse_coefficient = 0;
+            Vec3f col(s.material.colour.x, s.material.colour.y,s.material.colour.z);
+
+            for(auto l : lights){
+                //Apply lambertian/cosine shading
+                float shade = dot((l.position-intersection_point).normalize(),intersection_point.normalize());
+                //diffuse_coefficient += ;
+
+                if(shade < 0){
+                    shade = 0;
+                }
+
+                total_coeff += l.intensity*shade;
+            }
+
+            return s.material.colour * total_coeff;
         }
     } 
     
     return Vec3f(0.298, 0.7058, 0.9843);
 }
 
-void render(vector<Vec3f>& framebuffer, const int height, const int width, vector<Sphere> spheres) {
+void render(vector<Vec3f>& framebuffer, const int height, const int width, vector<Sphere> spheres, vector<Light> lights) {
     float widthf = (float)width;
     float heightf = (float)height;
     
@@ -110,7 +150,7 @@ void render(vector<Vec3f>& framebuffer, const int height, const int width, vecto
 
             Ray r(Vec3f(0,0,0), Vec3f(x, y, z));
 
-            framebuffer[i+j*width] = cast_ray(r, spheres);
+            framebuffer[i+j*width] = cast_ray(r, spheres, lights);
             
         }
     }
@@ -136,6 +176,9 @@ int main() {
     Material red(Vec3f(0.3, 0.1, 0.1));
     Material mat;
 
+    vector<Light> lights;
+    lights.push_back(Light(Vec3f(-20,20,20), 1.5));
+
     Sphere s(Vec3f(0,10,-30), 1, red);
     Sphere p(Vec3f(5,0,-30), 1, mat);
     Sphere q(Vec3f(-5,0,-30), 6, red);
@@ -146,7 +189,7 @@ int main() {
     spheres.push_back(q);
     spheres.push_back(r);
 
-    render(framebuffer, height, width, spheres);
+    render(framebuffer, height, width, spheres, lights);
     
     
     write_image_to_file(framebuffer, height, width);
