@@ -10,9 +10,19 @@
 
 struct Material {
     Vec3f colour;
+    float ambient;
+    float specular;
+    float shininess;
 
     Material(const Vec3f col){
         colour = col;
+    }
+
+    Material(const Vec3f col, float a, float s, float alpha){
+        colour = col;
+        ambient = a;
+        specular = s;
+        shininess = alpha;
     }
 
     Material() {
@@ -107,15 +117,15 @@ struct Sphere {
         float discriminant = b*b-4*a*c;
 
         if(discriminant > 0){
-            float t1 = (-b + sqrtf(b*b - 4*a*c))/(2*a);
-            float t2 = (-b - sqrtf(b*b - 4*a*c))/(2*a);
+            float t1 = (-b - sqrtf(b*b - 4*a*c))/(2*a);
+            float t2 = (-b + sqrtf(b*b - 4*a*c))/(2*a);
 
-            if(t1 > 0){ //point on line(time) = origin + direction*time
+            if(t2 > t1){ //point on line(time) = origin + direction*time
                 intersection_point.time = t1;
                 intersection_point.ray = r;
                 intersection_point.normal = (r.point_at_time(t1) - center).normalize();
                 return true;
-            } else if(t2 > 0){
+            } else {
                 intersection_point.time = t2;
                 intersection_point.ray = r;
                 intersection_point.normal = (r.point_at_time(t2) - center).normalize();
