@@ -73,8 +73,7 @@ struct Intersection {
     float time;
     Ray ray;
 
-    Intersection() {
-    }
+    Intersection() {}
 };
 
 struct Sphere {
@@ -117,8 +116,8 @@ struct Sphere {
         float discriminant = b*b-4*a*c;
 
         if(discriminant > 0){
-            float t1 = (-b - sqrtf(b*b - 4*a*c))/(2*a);
-            float t2 = (-b + sqrtf(b*b - 4*a*c))/(2*a);
+            float t1 = (-b + sqrtf(b*b - 4*a*c))/(2*a);
+            float t2 = (-b - sqrtf(b*b - 4*a*c))/(2*a);
 
             if(t2 > t1){ //point on line(time) = origin + direction*time
                 intersection_point.time = t1;
