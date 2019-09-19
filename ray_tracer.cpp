@@ -13,23 +13,24 @@ Vec3f cast_ray(Ray& r, vector<Sphere> spheres, vector<Light> lights){
     for(auto s : spheres){
         Intersection intersection_point;
         if(s.intersect(r, intersection_point)){
-            float total = 1;
+            float diffuse = 0;
+            float ambient = 0.8;
+
             for(auto l : lights){
                 //Apply lambertian/cosine shading
-                float shade = dot(
-                    intersection_point.normal.normalize(),
-                (l.position-intersection_point.ray.point_at_time(intersection_point.time)).normalize());
+                Vec3f point_normal = intersection_point.normal;
+                Vec3f light_direction = (l.position-intersection_point.ray.point_at_time(intersection_point.time)).normalize();
+                
+                float shade = dot(point_normal, light_direction);
 
                 if(shade < 0){
                     shade = 0.0;
-                } //else {
-                   // shade = 0.8;
-               // }
+                }
 
-                total += (l.intensity*shade);
+                diffuse += (l.intensity*shade);
             }
 
-            return s.material.colour * total;
+            return (s.material.colour * (diffuse + ambient));
         }
     } 
     
@@ -77,16 +78,16 @@ void write_image_to_file(vector<Vec3f>& framebuffer, const int height, const int
 }
 
 int main() {
-    const int width    = 1920;
-    const int height   = 1080;
+    const int width    = 1280;
+    const int height   = 720;
     vector<Vec3f> framebuffer(width*height); //List of Vec3
     vector<Sphere> spheres;
 
     Material red(Vec3f(0.3, 0.1, 0.1));
-    Material mat;
+    Material mat(Vec3f(0.4, 0.4, 0.3));
 
     vector<Light> lights;
-    lights.push_back(Light(Vec3f(-20,20,10), 4));
+    lights.push_back(Light(Vec3f(-80, 40, -40), 1.5));
 
     Sphere s(Vec3f(0,10,-30), 1, red);
     Sphere p(Vec3f(5,0,-30), 1, mat);
