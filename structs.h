@@ -64,11 +64,12 @@ struct Ray { //Ray represented by equation of line: origin + direction*t
     }
 
     Vec3f point_at_time(float t){
-        return origin + direction*t;
+        return origin + direction*t; //point on line(time) = origin + direction*time
     }
 };
 
 struct Intersection {
+    Vec3f point;
     Vec3f normal;
     float time;
     Ray ray;
@@ -119,15 +120,22 @@ struct Sphere {
             float t1 = (-b + sqrtf(b*b - 4*a*c))/(2*a);
             float t2 = (-b - sqrtf(b*b - 4*a*c))/(2*a);
 
-            if(t2 > t1){ //point on line(time) = origin + direction*time
+            if(t1 < 0 && t2 < 0){
+                return false;
+            }
+
+            //If t2 occurs after t1, the intersection point occurs at t1
+            if(t2 >= t1 && t1 > 0){ 
                 intersection_point.time = t1;
                 intersection_point.ray = r;
-                intersection_point.normal = (r.point_at_time(t1) - center).normalize();
+                intersection_point.normal = (r.point_at_time(t1) - center);
+                intersection_point.point = r.point_at_time(t1);
                 return true;
-            } else {
+            } else if(t2 <= t1 && t2 > 0) {
                 intersection_point.time = t2;
                 intersection_point.ray = r;
-                intersection_point.normal = (r.point_at_time(t2) - center).normalize();
+                intersection_point.normal = (r.point_at_time(t2) - center);
+                intersection_point.point = r.point_at_time(t2);
                 return true;
             }
         }
