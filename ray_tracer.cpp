@@ -146,7 +146,7 @@ int main() {
 
     Material red(Vec3f(0.3, 0.1, 0.1), 0.8, 0.1, 10, 0);
     Material mat(Vec3f(0.4, 0.4, 0.3), 0.1, 0.3, 40, 0);
-    Material glass(Vec3f(1.0, 1.0, 1.0), 0, 1, 50, 0.9);
+    Material glass(Vec3f(0.1, 0.1, 0.1), 0, 1, 50, 0.9);
 
     spheres.push_back(Sphere(Vec3f(0,5,-15), 4, red));
     spheres.push_back(Sphere(Vec3f(5,0,-30), 1, mat));
