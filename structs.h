@@ -13,16 +13,18 @@ struct Material {
     float ambient;
     float specular;
     float shininess;
+    float reflectiveness;
 
     Material(const Vec3f col){
         colour = col;
     }
 
-    Material(const Vec3f col, float a, float s, float alpha){
+    Material(const Vec3f col, float a, float s, float alpha, float r){
         colour = col;
         ambient = a;
         specular = s;
         shininess = alpha;
+        reflectiveness = r;
     }
 
     Material() {
@@ -116,7 +118,7 @@ struct Sphere {
         float c = dot(r.origin - center, r.origin - center) - radius*radius;
         float discriminant = b*b-4*a*c;
 
-        if(discriminant > 0){
+        if(discriminant >= 0){
             float t1 = (-b + sqrtf(b*b - 4*a*c))/(2*a);
             float t2 = (-b - sqrtf(b*b - 4*a*c))/(2*a);
 

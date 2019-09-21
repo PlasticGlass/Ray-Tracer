@@ -8,6 +8,8 @@
 
 using namespace std;
 
+const int MAX_RECURSION_DEPTH = 4;
+
 //Check to see if a ray hits anything
 bool trace(Ray& r, vector<Sphere> spheres, Intersection& i) {
     for(auto s : spheres){
@@ -19,34 +21,48 @@ bool trace(Ray& r, vector<Sphere> spheres, Intersection& i) {
     return false;
 }
 
-Vec3f cast_ray(Ray& r, vector<Sphere> spheres, vector<Light> lights){
+Vec3f cast_ray(Ray& r, vector<Sphere> spheres, vector<Light> lights, int recursion_depth){
     for(auto s : spheres){
         Intersection intersection;
+        Vec3f reflected_color;
 
         if(s.intersect(r, intersection)){
+            Vec3f point_normal = intersection.normal.normalize();
+            
+            //Compute reflections
+            if(s.material.reflectiveness > 0 && recursion_depth < MAX_RECURSION_DEPTH){
+                recursion_depth += 1;
+                Vec3f reflected = (2.0*(dot(-1*r.direction, point_normal))*point_normal - -1*r.direction).normalize();
+                Ray r_f = Ray(intersection.point + (0.000001*point_normal), reflected);
+                reflected_color = cast_ray(r_f, spheres, lights, recursion_depth);
+            } else {
+                reflected_color = Vec3f(0,0,0);
+            }
+
             float diffuse = 0;
             float specular = 0;
             bool path_obstructed = 0;
 
             for(auto l : lights){
-                //Apply lambertian/cosine shading + phong reflection model
-                Vec3f point_normal = intersection.normal.normalize();
+                //Apply phong reflection model
                 Vec3f light_direction = (l.position-intersection.point).normalize();
                 
+                //Compute shadows 
                 if(dot(point_normal, light_direction) > 0){
                     float normal_translation_factor = 0.0000001;
                     Ray traced = Ray(intersection.point + (normal_translation_factor*point_normal), light_direction);
                     Intersection shadow_intersection;
                     path_obstructed = trace(traced, spheres, shadow_intersection);
 
+                    //Rays from this light source dont hit, go to next light source
                     if(path_obstructed) {
                         continue;
                     }
                 }
 
-                Vec3f reflected = (2.0*(dot(light_direction, point_normal))*point_normal - light_direction).normalize();
+                Vec3f reflected_specular = (2.0*(dot(light_direction, point_normal))*point_normal - light_direction).normalize();
                 float shade = dot(point_normal, light_direction);
-                float specular_reflection = dot(reflected, -1*r.direction);
+                float specular_reflection = dot(reflected_specular, -1*r.direction);
 
                 if(shade < 0){
                     shade = 0.0;
@@ -59,16 +75,19 @@ Vec3f cast_ray(Ray& r, vector<Sphere> spheres, vector<Light> lights){
                 specular_reflection = powf(specular_reflection, s.material.shininess)*s.material.specular;
 
                 diffuse += (shade*l.intensity);
-
                 specular += (specular_reflection*l.intensity);
             }
 
-            return (s.material.colour * (diffuse + s.material.ambient) + Vec3f(1,1,1)*(!path_obstructed*specular));
+            return (s.material.colour * (diffuse + s.material.ambient) + Vec3f(1,1,1)*(!path_obstructed*specular) + (reflected_color*s.material.reflectiveness - path_obstructed*Vec3f(0.01,0.01,0.01)));
         }
     } 
     
     return Vec3f(0.298, 0.7058, 0.9843);
     //return Vec3f(0.1, 0.1, 0.1);
+}
+
+Vec3f cast_ray(Ray& r, vector<Sphere> spheres, vector<Light> lights){
+    return cast_ray(r, spheres, lights, 0);
 }
 
 void render(vector<Vec3f>& framebuffer, const int height, const int width, vector<Sphere> spheres, vector<Light> lights) {
@@ -95,7 +114,6 @@ void render(vector<Vec3f>& framebuffer, const int height, const int width, vecto
             Ray r(Vec3f(0,0,0), Vec3f(x, y, z));
 
             framebuffer[i+j*width] = cast_ray(r, spheres, lights);
-            
         }
     }
 }
@@ -125,20 +143,16 @@ int main() {
     vector<Vec3f> framebuffer(width*height); //List of Vec3
     vector<Sphere> spheres;
     vector<Light> lights;
-    Material red(Vec3f(0.3, 0.1, 0.1), 0.8, 0.1, 10);
-    Material mat(Vec3f(0.4, 0.4, 0.3), 0.1, 0.3, 40);
+
+    Material red(Vec3f(0.3, 0.1, 0.1), 0.8, 0.1, 10, 0);
+    Material mat(Vec3f(0.4, 0.4, 0.3), 0.1, 0.3, 40, 0);
+    Material glass(Vec3f(1.0, 1.0, 1.0), 0, 1, 50, 0.9);
 
     spheres.push_back(Sphere(Vec3f(0,5,-15), 4, red));
     spheres.push_back(Sphere(Vec3f(5,0,-30), 1, mat));
     spheres.push_back(Sphere(Vec3f(-5,0,-30), 6, red));
     spheres.push_back(Sphere(Vec3f(-10,5, -30), 4, mat));
-    spheres.push_back(Sphere(Vec3f( 8,    5,   -18), 4, red));
-    //spheres.push_back(Sphere(Vec3f(-20,10,-35), 3, mat));
-
-     //spheres.push_back(Sphere(Vec3f(-3,    0,   -18), 2,      mat));
-     //spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2, red));
-     //spheres.push_back(Sphere(Vec3f( 1.5, -0.5, -18), 3, red));
-     //spheres.push_back(Sphere(Vec3f( 7,    5,   -18), 4,      mat));
+    spheres.push_back(Sphere(Vec3f( 8,    5,   -18), 4, glass));
 
     lights.push_back(Light(Vec3f(-20, 20,  20), 1));
     lights.push_back(Light(Vec3f( 30, 50, -25), 1));
